@@ -26,7 +26,7 @@ import spidev
 import RPi.GPIO as GPIO
 
 
-__version__ = '0.0.4'
+__version__ = '0.0.4.doidotech'
 
 BG_SPI_CS_BACK = 0
 BG_SPI_CS_FRONT = 1
@@ -34,11 +34,11 @@ BG_SPI_CS_FRONT = 1
 SPI_CLOCK_HZ = 16000000
 
 # Constants for interacting with display registers.
-ST7735_TFTWIDTH = 80
+ST7735_TFTWIDTH = 128
 ST7735_TFTHEIGHT = 160
 
-ST7735_COLS = 132
-ST7735_ROWS = 162
+ST7735_COLS = 128
+ST7735_ROWS = 160
 
 ST7735_NOP = 0x00
 ST7735_SWRESET = 0x01
@@ -119,7 +119,7 @@ class ST7735(object):
     """Representation of an ST7735 TFT LCD."""
 
     def __init__(self, port, cs, dc, backlight=None, rst=None, width=ST7735_TFTWIDTH,
-                 height=ST7735_TFTHEIGHT, rotation=90, offset_left=None, offset_top=None, invert=True, spi_speed_hz=4000000):
+                 height=ST7735_TFTHEIGHT, rotation=90, offset_left=None, offset_top=None, invert=True, spi_speed_hz=4000000, rgb=True):
         """Create an instance of the display using SPI communication.
 
         Must provide the GPIO pin number for the D/C pin and the SPI driver.
@@ -137,6 +137,7 @@ class ST7735(object):
         :param offset_top: ROW offset in ST7735 memory
         :param invert: Invert display
         :param spi_speed_hz: SPI speed (in Hz)
+        :param rgb: RGB or BGR LCD, True=>RGB, False=>BGR
 
         """
 
@@ -154,6 +155,7 @@ class ST7735(object):
         self._height = height
         self._rotation = rotation
         self._invert = invert
+        self._rgb = rgb
 
         # Default left offset to center display
         if offset_left is None:
@@ -181,6 +183,12 @@ class ST7735(object):
         # Setup reset as output (if provided).
         if rst is not None:
             GPIO.setup(rst, GPIO.OUT)
+            
+        # Set RGB or BGR mode
+        if rgb == True:
+            self.ST7735_MADCTL = 0x36
+        else:
+            self.ST7735_MADCTL = 0x00
 
         self.reset()
         self._init()
@@ -284,7 +292,7 @@ class ST7735(object):
         else:
             self.command(ST7735_INVOFF)  # Don't invert display
 
-        self.command(ST7735_MADCTL)     # Memory access control (directions)
+        self.command(self.ST7735_MADCTL)     # Memory access control (directions)
         self.data(0xC8)                 # row addr/col addr, bottom to top refresh
 
         self.command(ST7735_COLMOD)     # set color mode
